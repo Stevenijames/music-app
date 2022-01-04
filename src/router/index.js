@@ -1,26 +1,68 @@
-import { createRouter, createWebHashHistory } from "vue-router";
-import Home from "../views/Home.vue";
+import { createRouter, createWebHistory } from "vue-router";
+import Home from "@/views/Home.vue";
+import About from "@/views/About.vue";
+import Manage from "@/components/Manage.vue";
+import Song from "@/views/Song.vue";
+import store from "@/store";
 
 const routes = [
   {
+    name: "home",
     path: "/",
-    name: "Home",
     component: Home,
   },
   {
+    name: "about",
     path: "/about",
-    name: "About",
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () =>
-      import(/* webpackChunkName: "about" */ "../views/About.vue"),
+    component: About,
+  },
+  {
+    name: "manage",
+    // alias: "/manage",
+    path: "/manage-music",
+    meta: {
+      requiresAuth: true,
+    },
+    component: Manage,
+    beforeEnter: (to, from, next) => {
+      console.log("Manage Route Guard");
+      next();
+    },
+  },
+  {
+    path: "/manage",
+    redirect: { name: "manage" },
+  },
+  {
+    name: "song",
+    path: "/song/:id",
+    component: Song,
+  },
+  {
+    path: "/:catchAll(.*)*",
+    redirect: { name: "home" },
   },
 ];
-
+// router variable
 const router = createRouter({
-  history: createWebHashHistory(),
+  history: createWebHistory(process.env.BASE_URL),
   routes,
+  linkExactActiveClass: "text-yellow-500",
 });
 
+// Register Global Before Gaurds
+router.beforeEach((to, from, next) => {
+  // console.log(to.matched);
+
+  if (!to.matched.some((record) => record.meta.requiresAuth)) {
+    next();
+    return;
+  }
+
+  if (store.state.userLoggedIn) {
+    next();
+  } else {
+    next({ name: "home" });
+  }
+});
 export default router;
